@@ -16,7 +16,7 @@ Windows: (https://stackoverflow.com/questions/24285508/how-to-use-pip-with-pytho
 
 On the folder or each script the necessary python packages are in the `requirements.txt` file to install them:
 ```
-pip3 -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 
