@@ -11,6 +11,7 @@ __email__      = 'jorge.dejesus@geocat.net'
 
 import zipfile,argparse,os
 from xml_parser import XMLParser
+from lxml import etree
 
 class iterXMLFile(object):
     """Iteractor class providing XML I/O files object from the input zip file for processing
@@ -49,21 +50,31 @@ def main(args):
     for xmlFileObj in iterXMLFile(INPUT_FILE):
         
         xmlData = XMLParser(xmlFileObj)
-        metadata = xmlData.getMetadata(asString = True)
-        feature =  xmlData.getFeature(asString = True)
+        metadata = xmlData.getMetadata(asString = False)
+        
+        
         
         if metadata is None:
             print("File {} has no metadata skipping it".format(xmlFileObj.name))
             continue
-                       
-        fMetadataName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_metadata.xml') 
-        fFeatureName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_feature.xml')
-        with open(fMetadataName,'wb') as outMetadata, open(fFeatureName,'wb') as outFeature:
-            outMetadata.write(metadata)
-            try:
+
+                     
+        featureName = xmlData.getFeatureName() 
+        if featureName:
+            #static method
+            feature =  xmlData.getFeature(asString = True)  
+            metadata=XMLParser.addFC(metadata,featureName)
+            fFeatureName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_feature.xml')
+            with open(fFeatureName,'wb') as outFeature:
                 outFeature.write(feature)
-            except:
-                print("File {} has no features".format(xmlFileObj.name))
+                
+            
+        
+        fMetadataName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_metadata.xml')
+        with open(fMetadataName,'wb') as outMetadata:
+            metadataOut=etree.tostring(metadata, encoding='UTF-8', xml_declaration=True,pretty_print=True)
+            outMetadata.write(metadataOut)
+
                     
         
         print("File {} has been processed".format(xmlFileObj.name))
