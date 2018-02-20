@@ -17,7 +17,7 @@ class XMLParser(object):
     
     csw_link = "{0}?service=CSW&amp;request=GetRecordById&amp;version=2.0.2&amp;outputSchema=http://www.isotc211.org/2005/gmd&amp;elementSetName=full&amp;id={1}"
     # Do new element structure but hand using a simple string have problems with xlink
-    NS_METADATA={None:  "http://www.isotc211.org/2005/gmd","xlink": 'http://www.w3.org/1999/xlink'}
+    #NS_METADATA={None:  "http://www.isotc211.org/2005/gmd","xlink": 'http://www.w3.org/1999/xlink'}
     
     
     def __init__(self,xmlFile):
@@ -25,6 +25,7 @@ class XMLParser(object):
         self.encoding = "UTF-8"
         self.xml_declaration = True
         self.pretty_print = True
+        self.xsl_esri_2_19110 = "esri-to-iso19110.xsl"
         
        
     
@@ -65,38 +66,38 @@ class XMLParser(object):
         return self._getXML(elName="MD_Metadata",asString=asString)
         
         
-    def getFeature(self,asString=False):
-        
-        """Makes an xpath query and returns an XML doc for FC_FeatureCatalogue. Also adds minimal namepsaces and uuif
-        
-        Arguments:
-        asString -- If true it returns XML as string otherwise as XML Element (default: False)
-        
-        Output:
-        XML FC_FeatureCatalogue content as XML element or None if not found (empty)
-
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-        xsi:schemaLocation="http://www.isotc211.org/2005/gfc/gfc.xsd"
-        xmlns="http://www.isotc211.org/2005/gfc"
-        uuid = "<uuid>" 
-
-        """ 
-        #ET.register_namespace(prefix, uri)
-        
-        xmlDoc = self._getXML(elName="FC_FeatureCatalogue",asString=False)
-        if xmlDoc:
-            #xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xmlDoc.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation']= "http://www.isotc211.org/2005/gfc http://www.isotc211.org/2005/gfc/gfc.xsd"
-            xmlDoc.attrib['xmlns'] = "http://www.isotc211.org/2005/gfc"
-            xmlDoc.attrib["uuid"] = self.getFeatureName()
-            if asString:
-                etree.register_namespace("xsi","http://www.w3.org/2001/XMLSchema-instance")
-                return etree.tostring(xmlDoc, encoding='UTF-8', xml_declaration=True,pretty_print=True)
-            else:
-                return xmlDoc
-               
-        else:
-            return None
+#     def getFeature(self,asString=False):
+#         
+#         """Makes an xpath query and returns an XML doc for FC_FeatureCatalogue. Also adds minimal namepsaces and uuif
+#         
+#         Arguments:
+#         asString -- If true it returns XML as string otherwise as XML Element (default: False)
+#         
+#         Output:
+#         XML FC_FeatureCatalogue content as XML element or None if not found (empty)
+# 
+#         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+#         xsi:schemaLocation="http://www.isotc211.org/2005/gfc/gfc.xsd"
+#         xmlns="http://www.isotc211.org/2005/gfc"
+#         uuid = "<uuid>" 
+# 
+#         """ 
+#         #ET.register_namespace(prefix, uri)
+#         
+#         xmlDoc = self._getXML(elName="FC_FeatureCatalogue",asString=False)
+#         if xmlDoc:
+#             #xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+#             xmlDoc.attrib['{http://www.w3.org/2001/XMLSchema-instance}schemaLocation']= "http://www.isotc211.org/2005/gfc http://www.isotc211.org/2005/gfc/gfc.xsd"
+#             xmlDoc.attrib['xmlns'] = "http://www.isotc211.org/2005/gfc"
+#             xmlDoc.attrib["uuid"] = self.getFeatureName()
+#             if asString:
+#                 etree.register_namespace("xsi","http://www.w3.org/2001/XMLSchema-instance")
+#                 return etree.tostring(xmlDoc, encoding='UTF-8', xml_declaration=True,pretty_print=True)
+#             else:
+#                 return xmlDoc
+#                
+#         else:
+#             return None
 
     def getFeatureName(self):
         """Makes an xpath query to get the feature name if not proper file or not found will return []
@@ -113,27 +114,38 @@ class XMLParser(object):
         else:
             return None
     
-    @staticmethod    
-    def addFC(metadata,featureUUID):
+    def xlsArcMap2Feature(self,featureUID):
+        """Uses XLS transformation to generate a Feature content"""
+        self.xsl_esri_2_19110
+        transformXSL = etree.XSLT(etree.parse(self.xsl_esri_2_19110))
+        featureUID="'"+featureUID+"'"
+        outDoc = transformXSL(self.xmlDoc, uid=featureUID)
         
-        elIdentificationInfo = metadata.xpath("//*[local-name() = 'identificationInfo']")[0]
-        elMD_Metadata = elIdentificationInfo.getparent()
-
-        fcCitationEl = etree.Element('featureCatalogueCitation', nsmap=XMLParser.NS_METADATA)
+        outDoc = etree.tostring(outDoc, encoding=self.encoding, xml_declaration=True,pretty_print=self.pretty_print)
+        return outDoc
+                
         
-        fclink = XMLParser.csw_link.format(xlink_href,featureUUID)
-        
-        fcCitationEl.attrib['{http://www.w3.org/1999/xlink}href'] = fclink
-        fcCitationEl.attrib['uuidref'] = featureUUID
-
-        MD_FCDescriptionEl = etree.Element('MD_FeatureCatalogueDescription')
-        MD_FCDescriptionEl.append(fcCitationEl)
-        contentInfoEl = etree.Element('contentInfo')
-        contentInfoEl.append(MD_FCDescriptionEl)
-
-        #adding everything into place
-        elMD_Metadata.insert(elMD_Metadata.index(elIdentificationInfo)+1,contentInfoEl)
-        
-        return metadata
+#     @staticmethod    
+#     def addFC(metadata,featureUUID):
+#         
+#         elIdentificationInfo = metadata.xpath("//*[local-name() = 'identificationInfo']")[0]
+#         elMD_Metadata = elIdentificationInfo.getparent()
+# 
+#         fcCitationEl = etree.Element('featureCatalogueCitation', nsmap=XMLParser.NS_METADATA)
+#         
+#         fclink = XMLParser.csw_link.format(xlink_href,featureUUID)
+#         
+#         fcCitationEl.attrib['{http://www.w3.org/1999/xlink}href'] = fclink
+#         fcCitationEl.attrib['uuidref'] = featureUUID
+# 
+#         MD_FCDescriptionEl = etree.Element('MD_FeatureCatalogueDescription')
+#         MD_FCDescriptionEl.append(fcCitationEl)
+#         contentInfoEl = etree.Element('contentInfo')
+#         contentInfoEl.append(MD_FCDescriptionEl)
+# 
+#         #adding everything into place
+#         elMD_Metadata.insert(elMD_Metadata.index(elIdentificationInfo)+1,contentInfoEl)
+#         
+#         return metadata
         
         

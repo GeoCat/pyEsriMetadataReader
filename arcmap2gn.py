@@ -39,8 +39,6 @@ class iterXMLFile(object):
              yield self.zipFile.open(x)
         
 
-
- 
 def main(args):
     """Main function and code runing"""
     
@@ -48,10 +46,9 @@ def main(args):
     OUTPUT_PATH = args.outputPath
     
     for xmlFileObj in iterXMLFile(INPUT_FILE):
-        
+        print("Doing file:{}".format(xmlFileObj.name))
         xmlData = XMLParser(xmlFileObj)
         metadata = xmlData.getMetadata(asString = False)
-        
         
         
         if metadata is None:
@@ -62,14 +59,14 @@ def main(args):
         featureName = xmlData.getFeatureName() 
         if featureName:
             #static method
-            feature =  xmlData.getFeature(asString = True)  
-            metadata=XMLParser.addFC(metadata,featureName)
+            #feature =  xmlData.getFeature(asString = True)
+            
+            feature = xmlData.xlsArcMap2Feature(featureName)  
             fFeatureName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_feature.xml')
             with open(fFeatureName,'wb') as outFeature:
                 outFeature.write(feature)
                 
             
-        
         fMetadataName = os.path.join(OUTPUT_PATH,xmlFileObj.name[:-4]+'_metadata.xml')
         with open(fMetadataName,'wb') as outMetadata:
             metadataOut=etree.tostring(metadata, encoding='UTF-8', xml_declaration=True,pretty_print=True)
@@ -80,8 +77,7 @@ def main(args):
         print("File {} has been processed".format(xmlFileObj.name))
     
     
-if __name__ == "__main__": 
-    
+if __name__== "__main__":
     parser = argparse.ArgumentParser(description = __summary__)
     parser.add_argument('-i','--zipfile',dest="zipfile", 
                         required=False,  default="./data/metadataportaal.zip", 
