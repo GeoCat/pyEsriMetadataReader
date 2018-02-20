@@ -17,7 +17,7 @@ class XMLParser(object):
     
     csw_link = "{0}?service=CSW&amp;request=GetRecordById&amp;version=2.0.2&amp;outputSchema=http://www.isotc211.org/2005/gmd&amp;elementSetName=full&amp;id={1}"
     # Do new element structure but hand using a simple string have problems with xlink
-    #NS_METADATA={None:  "http://www.isotc211.org/2005/gmd","xlink": 'http://www.w3.org/1999/xlink'}
+    NS_METADATA={None:  "http://www.isotc211.org/2005/gmd","xlink": 'http://www.w3.org/1999/xlink'}
     
     
     def __init__(self,xmlFile):
@@ -125,27 +125,27 @@ class XMLParser(object):
         return outDoc
                 
         
-#     @staticmethod    
-#     def addFC(metadata,featureUUID):
-#         
-#         elIdentificationInfo = metadata.xpath("//*[local-name() = 'identificationInfo']")[0]
-#         elMD_Metadata = elIdentificationInfo.getparent()
-# 
-#         fcCitationEl = etree.Element('featureCatalogueCitation', nsmap=XMLParser.NS_METADATA)
-#         
-#         fclink = XMLParser.csw_link.format(xlink_href,featureUUID)
-#         
-#         fcCitationEl.attrib['{http://www.w3.org/1999/xlink}href'] = fclink
-#         fcCitationEl.attrib['uuidref'] = featureUUID
-# 
-#         MD_FCDescriptionEl = etree.Element('MD_FeatureCatalogueDescription')
-#         MD_FCDescriptionEl.append(fcCitationEl)
-#         contentInfoEl = etree.Element('contentInfo')
-#         contentInfoEl.append(MD_FCDescriptionEl)
-# 
-#         #adding everything into place
-#         elMD_Metadata.insert(elMD_Metadata.index(elIdentificationInfo)+1,contentInfoEl)
-#         
-#         return metadata
+    @staticmethod    
+    def addFC(metadata,featureUUID):
+         
+         elIdentificationInfo = metadata.xpath("//*[local-name() = 'identificationInfo']")[0]
+         elMD_Metadata = elIdentificationInfo.getparent()
+ 
+         fcCitationEl = etree.Element('featureCatalogueCitation', nsmap=XMLParser.NS_METADATA)
+         
+         fclink = XMLParser.csw_link.format(xlink_href,featureUUID)
+         
+         fcCitationEl.attrib['{http://www.w3.org/1999/xlink}href'] = fclink
+         fcCitationEl.attrib['uuidref'] = featureUUID
+ 
+         MD_FCDescriptionEl = etree.Element('MD_FeatureCatalogueDescription')
+         MD_FCDescriptionEl.append(fcCitationEl)
+         contentInfoEl = etree.Element('contentInfo')
+         contentInfoEl.append(MD_FCDescriptionEl)
+ 
+         #adding everything into place
+         elMD_Metadata.insert(elMD_Metadata.index(elIdentificationInfo)+1,contentInfoEl)
+         
+         return metadata
         
         
